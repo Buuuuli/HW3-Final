@@ -5,7 +5,7 @@ from fintech_ibkr import *
 
 hostname = '127.0.0.1'
 port = 7497
-client_id = 10645 # can set and use your Master Client ID
+client_id = 116358 # can set and use your Master Client ID
 
 value = "EUR.USD" # This is what your text input looks like on your app
 
@@ -51,8 +51,8 @@ lmt_order.lmtPrice = 1012
 # are a few ways to do this, for example, by using GROUPS: https://www.interactivebrokers.com/en/software/advisors/topics/accountgroups.htm
 # But probably the easiest way is to just pass in the ID of the account you
 # want to use, like this:
-mkt_order.account = 'DU1267861'
-lmt_order.account = 'DU1267861'
+mkt_order.account = 'DU5310097'
+lmt_order.account = 'DU5310097'
 # Don't want to mess this one up because your clients all signed up for
 # different strategies. You don't want to accidentally make trades for your
 # wild options strategy using the account owned by your conservative, careful

@@ -254,22 +254,69 @@ app.layout = html.Div([
     # Another line break
     html.Br(),
     # Section title
-    html.H6("Make a Trade"),
+    html.H3("Make a Trade"),
     # Div to confirm what trade was made
     html.Div(id='trade-output'),
+    html.H4("choose what to trade"),
+    dcc.Dropdown(
+        options=[
+            'STK', 'OPT', 'FUT', 'IND', 'FOP', 'CASH',
+            'BAG', 'WAR', 'BOND', 'CMDTY', 'NEWS',
+            'FUND'
+        ],
+        id='SecType',
+        value='STK',
+        style={
+            'width': '75px',
+            'display': 'inline-block',
+            'vertical-align': 'middle',
+            'padding-left': '15px'
+        }
+    ),
+    html.H4("write the underlying's asset symbol"),
+    html.P(
+                children=[
+                    "See the various underlyings' asset symbol: ",
+                    html.A(
+                        "asset symbol",
+                        href=('https://interactivebrokers.github.io/tws-api/basic_contracts.html')
+                    )
+                ]
+            ),
+    # Text input for the currency pair to be traded
+    dcc.Input(id='Contract_Symbol', value='AUD.CAD', type='text'),
+    html.H4("write the currency"),
+    dcc.Input(id='currency', value='USD', type='text'),
+    html.H4("write the exchange"),
+    dcc.Input(id='exchange', value='SMART', type='text'),
+    html.H4("write the primaryExchange"),
+    dcc.Input(id='primaryExchange', value='ARCA', type='text'),
+
+    # choose market order or limit order
+    html.H4("choose market order or limit order"),
+    dcc.RadioItems(
+        id='mko_or_lmo',
+        options=[
+            {'label': 'MKT', 'value': 'MKT'},
+            {'label': 'LMT', 'value': 'LMT'}
+        ],
+        value='MKT'
+    ),
+    html.H4("choose buy or sell"),
     # Radio items to select buy or sell
     dcc.RadioItems(
-        id='buy-or-sell',
+        id='buy_or_sell',
         options=[
             {'label': 'BUY', 'value': 'BUY'},
             {'label': 'SELL', 'value': 'SELL'}
         ],
         value='BUY'
     ),
-    # Text input for the currency pair to be traded
-    dcc.Input(id='trade-currency', value='AUDCAD', type='text'),
+    html.H4("write how much to trade"),
     # Numeric input for the trade amount
-    dcc.Input(id='trade-amt', value='20000', type='number'),
+    dcc.Input(id='trade_amt', value='100', type='number'),
+    html.H4("write limit order price"),
+    dcc.Input(id='lmtPrice', value='100', type='number'),
     # Submit button for the trade
     html.Button('Trade', id='trade-button', n_clicks=0)
 
@@ -340,7 +387,7 @@ def update_candlestick_graph(n_clicks, currency_string, what_to_show,
     except:
         return ("No contract found for " + currency_string), go.Figure()
 
-    contract_symbol_ibkr = str(contract_details).split(",")[10]
+    contract_symbol_ibkr = contract_details.symbol[0]+'.'+contract_details.currency[0]
 
     # If the contract name doesn't equal the one you want:
     if not contract_symbol_ibkr == currency_string:
@@ -411,24 +458,41 @@ def update_candlestick_graph(n_clicks, currency_string, what_to_show,
     Output(component_id='trade-output', component_property='children'),
     # Only run this callback function when the trade-button is pressed
     Input('trade-button', 'n_clicks'),
-    # We DON'T want to run this function whenever buy-or-sell, trade-currency,
+    # We DON'T want to run this function whenever buy-or-sell, Contract_Symbol,
     #   or trade-amt is updated, so we pass those in as States, not Inputs:
-    [State('buy-or-sell', 'value'), State('trade-currency', 'value'),
-     State('trade-amt', 'value'), State("host", "value"),
+    [State('SecType', 'value'), State('Contract_Symbol', 'value'), State('currency', 'value'),
+     State('exchange', 'value'), State('primaryExchange', 'value'), State('mko_or_lmo', 'value'),
+     State('buy_or_sell', 'value'),
+     State('trade_amt', 'value'), State('lmtPrice', 'value'), State("host", "value"),
      State("port", "value"), State("clientid", "value")],
     # DON'T start executing trades just because n_clicks was initialized to 0!!!
     prevent_initial_call=True
 )
-def trade(n_clicks, action, trade_currency, trade_amt, host, port, clientid):
+def trade(n_clicks, SecType, Contract_Symbol, currency, exchange, primaryExchange,mko_or_lmo, buy_or_sell,
+          trade_amt, lmtPrice, host, port, clientid):
     # Still don't use n_clicks, but we need the dependency
 
     # Make the message that we want to send back to trade-output
-    msg = action + ' ' + trade_amt + ' ' + trade_currency
+    msg = buy_or_sell + ' ' + trade_amt + ' ' + Contract_Symbol
+
+    contract_stk = Contract()
+    contract_stk.symbol = "TSLA"
+    contract_stk.secType = "STK"
+    contract_stk.currency = "USD"
+    contract_stk.exchange = "SMART"
+    contract_stk.primaryExchange = "ARCA"
+
 
     order = Order()
-    order.action = action
+    order.action = buy_or_sell
     order.orderType = "MKT"
     order.totalQuantity = trade_amt
+
+    lmt_order = Order()
+    lmt_order.action = "SELL"
+    lmt_order.orderType = "LMT"
+    lmt_order.totalQuantity = 100
+    lmt_order.lmtPrice = 1012
 
     # Return the message, which goes to the trade-output div's children
     return msg
