@@ -468,31 +468,44 @@ def update_candlestick_graph(n_clicks, currency_string, what_to_show,
     # DON'T start executing trades just because n_clicks was initialized to 0!!!
     prevent_initial_call=True
 )
-def trade(n_clicks, SecType, Contract_Symbol, currency, exchange, primaryExchange,mko_or_lmo, buy_or_sell,
+def trade(n_clicks, SecType, Contract_Symbol, currency, exchange, primaryExchange, mko_or_lmo, buy_or_sell,
           trade_amt, lmtPrice, host, port, clientid):
     # Still don't use n_clicks, but we need the dependency
 
     # Make the message that we want to send back to trade-output
-    msg = buy_or_sell + ' ' + trade_amt + ' ' + Contract_Symbol
+    msg = buy_or_sell + ' ' + str(trade_amt) + ' ' + Contract_Symbol
 
-    contract_stk = Contract()
-    contract_stk.symbol = "TSLA"
-    contract_stk.secType = "STK"
-    contract_stk.currency = "USD"
-    contract_stk.exchange = "SMART"
-    contract_stk.primaryExchange = "ARCA"
+    contract = Contract()
+    contract.symbol = Contract_Symbol
+    contract.secType = SecType
+    contract.currency = currency
+    contract.exchange = exchange
+    contract.primaryExchange = primaryExchange
+
+    try:
+        contract_details = fetch_contract_details(contract, hostname=host,
+                                                  port=port, client_id=clientid)
+    except:
+        return ("No contract found for " + Contract_Symbol)
 
 
-    order = Order()
-    order.action = buy_or_sell
-    order.orderType = "MKT"
-    order.totalQuantity = trade_amt
 
-    lmt_order = Order()
-    lmt_order.action = "SELL"
-    lmt_order.orderType = "LMT"
-    lmt_order.totalQuantity = 100
-    lmt_order.lmtPrice = 1012
+    if mko_or_lmo == 'MKT':
+        order = Order()
+        order.action = buy_or_sell
+        order.orderType = 'MKT'
+        order.totalQuantity = trade_amt
+    else:
+        order = Order()
+        order.action = buy_or_sell
+        order.orderType = 'LMT'
+        order.totalQuantity = trade_amt
+        order.lmtPrice = lmtPrice
+
+    order.account = 'DU5310097'
+
+    place_order(contract, order)
+
 
     # Return the message, which goes to the trade-output div's children
     return msg
