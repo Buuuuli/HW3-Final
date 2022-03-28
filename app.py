@@ -1,6 +1,7 @@
 import time
 
 import dash
+import pandas as pd
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 from ibapi.contract import Contract
@@ -502,11 +503,30 @@ def trade(n_clicks, SecType, Contract_Symbol, currency, exchange, primaryExchang
         order.totalQuantity = trade_amt
         order.lmtPrice = lmtPrice
 
-    order.account = 'DU5310097'
+    m = place_order(contract, order)
 
-    place_order(contract, order)
+    df_file = pd.read_csv('C:\\submitted_orders.csv')
 
+    # find order account
+    order_account = order.account
+    # find order detail
+    order_ID = m['orderId'][0]
 
+    perm = m['perm_id'][0]
+    c = clientid
+    con_id = fetch_contract_details(contract, hostname=host, port=port, client_id=clientid)['con_id'][0]
+    current_time = fetch_current_time()
+    smbol = contract.symbol
+    action_buy_sell = order.action
+    size = order.totalQuantity
+    order_type = order.orderType
+    lmt_price = order.lmtPrice
+
+    df_file = df_file.append({'timestamp': current_time,'order_id': order_ID,'client_id': c,'perm_id':perm,
+                              'con_id':con_id,'symbol':smbol,'action':action_buy_sell,
+                              'size':size,'order_type':order_type,'lmt_price':lmt_price}, ignore_index=True)
+
+    df_file.to_csv("C:\\submitted_orders.csv", index=False)
     # Return the message, which goes to the trade-output div's children
     return msg
 
